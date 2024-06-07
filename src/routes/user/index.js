@@ -1,0 +1,22 @@
+const { getUser } = require('../../controller/user');
+async function check(request, reply) {
+    console.log('进入user模块');
+}
+module.exports = async (fastify, opts) => {
+    // 进入该模块接口前的校验
+    fastify.addHook('preHandler', check);
+    // 简写路由
+    fastify.get('/getUser', getUser);
+    fastify.post('/getUser', (req, res) => {
+        throw new Error('this is a error');
+    });
+    // 完整路由
+    fastify.route({
+        method: 'GET',
+        url: '/test',
+        handler: async (req, res) => {
+            return res.responseOk({}, '获取成功');
+        },
+    });
+
+};

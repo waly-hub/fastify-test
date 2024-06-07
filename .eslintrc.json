@@ -1,0 +1,25 @@
+{
+    "env": {
+        "browser": true,
+        "commonjs": true,
+        "es2021": true,
+        "node": true
+    },
+    "extends": "eslint:recommended",
+    "overrides": [
+        {
+            "files": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"]
+          }
+    ],
+    "parserOptions": {
+        "ecmaVersion": "latest"
+    },
+    "rules": {
+        "quotes": ["error", "single"], // 使用单引号
+        "semi": ["error", "always"], // 句末需要分号
+        // "max-len": ["error", { "code": 120, "ignoreComments": true }], // 超过120个字符需要换行，忽略注释长度
+        "comma-dangle": ["error", "always-multiline"], // 对象末尾补充逗号，在多行时应用
+        "indent": ["error", 4, { "SwitchCase": 1 }],
+        "no-unused-vars": ["warn", { "vars": "all", "args": "after-used", "ignoreRestSiblings": false }]
+    }
+}
