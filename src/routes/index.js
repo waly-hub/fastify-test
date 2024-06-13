@@ -6,10 +6,9 @@ async function registerRouters(fastify) {
     fastify.route({
         method: 'OPTIONS',
         url: '*', // 匹配所有路径
-        handler: (request, reply) => {
-
+        handler: (req, res) => {
             // 返回200状态码，表示预检请求已成功处理
-            reply.send(200);
+            res.send(200);
         },
     });
     fastify.register(familyRouter, { prefix: '/api/v1/family' });

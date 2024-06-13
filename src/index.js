@@ -4,11 +4,12 @@ const routes = require('./routes');
 const { checkCROS } = require('./utils/cors');
 const logger = require('./utils/logger');
 const config = require('./config');
-const injectCtx = require('./utils/injectCtx');
 const { errorCode } = require('./utils/constant');
 const fpx = require('fast-xml-parser');
 const xmlParser = new fpx.XMLParser();
 const { apiLog } = require('./utils/send2Kinesis');
+const { responseOk, responseError, responseCustome, directResponse } = require('./utils/response');
+
 
 const validContentTypes = new Set(['application/json', 'application/json; charset=utf-8']);
 const ignoredPaths = [
@@ -33,20 +34,6 @@ async function prestart() {
     }
 }
 
-// 所有请求开始处理前
-const beforeRequest = async (req, res) => {
-    // 请求开始时记录时间
-    req.startTs = new Date().getTime();
-
-    //如果header有nonce，记录下来
-    const nonce = req.headers['x-ck-nonce'];
-    if (nonce) {
-        req.nonce = nonce;
-    }
-
-    //向request和response对象注入方法
-    injectCtx(req, res);
-};
 
 // 请求业务处理之前
 const beforeHandler = async (req, res) => {
@@ -72,7 +59,6 @@ const beforeHandler = async (req, res) => {
     }
 };
 
-
 // 所有请求返回结果前
 const beforeResponse = async (req, res) => {
 
@@ -95,7 +81,74 @@ const beforeResponse = async (req, res) => {
 
 };
 
+/**
+ * 
+ * @param {import('fastify').FastifyInstance} fastify 
+ */
+function addApplicationHooks(fastify) {
+    // 当调用 fastify.close() 停止服务器时触发。
+    fastify.addHook('onClose', async (instance) => {
+        console.log('server close');
+    });
 
+    // 在服务器开始侦听请求之前以及调用 .ready() 时触发。
+    fastify.addHook('onReady', async () => {
+        console.log('server start');
+    });
+}
+
+/**
+ * 
+ * @param {import('fastify').FastifyInstance} fastify 
+ */
+function addRequestHooks(fastify) {
+    // 收到请求，初始化上下文
+    fastify.addHook('onRequest', async (req, res) => {
+        //如果header有nonce，记录下来
+        const nonce = req.headers['x-ck-nonce'];
+        if (nonce) {
+            req.nonce = nonce;
+        }
+    });
+
+    // 请求业务处理之前
+    fastify.addHook('preHandler', beforeHandler);
+
+    // 所有请求返回结果前
+    fastify.addHook('onSend', beforeResponse);
+
+    // 收到请求，在解析body前判断头部
+    // 注意：Fastify 原生只支持 'application/json' 和 'text/plain' 内容类型。如果内容类型不是其中之一，则会抛出 FST_ERR_CTP_INVALID_MEDIA_TYPE 错误。
+    // 如果你需要支持其他的 content types，你需要使用 addContentTypeParser API。默认的 JSON 或者纯文本解析器也可以被更改.
+    fastify.addHook('preParsing', async (req, res, payload) => {
+        //跳过公共验证方法的路由
+        //除health外的路由必须在其路由配置中指定 preParsing 方法
+        const ignoreUrl = [
+            '/health',
+        ];
+        if (ignoreUrl.includes(req.url) || req.headers['content-type']?.includes('application/json')) {
+            return payload;
+        } else {
+            res.status(400).send('Content type must be "application/json"');
+        }
+    });
+
+}
+
+function decoratePlugin(fastify) {
+    // 装饰请求对象，声明上下文会话对象
+    fastify.decorateRequest('duration', 0);
+    fastify.decorateRequest('nonce', '');
+    fastify.decorateRequest('appid', '');
+    fastify.decorateRequest('apikey', '');
+    fastify.decorateRequest('deviceid', '');
+
+    // 装饰返回对象
+    fastify.decorateReply('responseOk', responseOk);
+    fastify.decorateReply('responseError', responseError);
+    fastify.decorateReply('responseCustome', responseCustome);
+    fastify.decorateReply('directResponse', directResponse);
+}
 
 const start = async () => {
     try {
@@ -105,12 +158,16 @@ const start = async () => {
         // 初始化路由
         fastify.register(routes);
 
-        // 全局注册中间件，应用到所有路由
-        fastify.addHook('onRequest', beforeRequest);
-        fastify.addHook('preHandler', beforeHandler);
-        fastify.addHook('onSend', beforeResponse);
+        // 注册请求、响应对象装饰器
+        fastify.register(decoratePlugin);
 
-        // 全局错误处理
+        // 注册应用级钩子
+        addApplicationHooks(fastify);
+
+        // 注册请求级钩子
+        addRequestHooks(fastify);
+
+        // 错误处理
         fastify.setErrorHandler(errorHandler);
 
         // 监听3000端口
@@ -129,6 +186,7 @@ const start = async () => {
     }
 };
 
+// 假如错误的 statusCode 小于 400，在处理错误前 Fastify 将会自动将其设为 500
 function errorHandler(error, req, res) {
     if (error.name === 'MongoNetworkError' || error.name === 'MongoTimeoutError' || error.name === 'MongoError') {
         //mognodb服务读写错误
@@ -162,6 +220,8 @@ function errorHandler(error, req, res) {
         res.code(200).responseError(errorCode.internalError);
     }
 }
+
+
 
 (async () => {
     await start();

@@ -33,25 +33,25 @@ async function _send2Kinesis(req, res) {
         }
     }
     //确保传入的字符串要么有值，要么为空，不能为null或空字符串
-    // logger.statistics(config.kinesisCategory.overview, {
-    //     // TODO: functionName
-    //     // function: res.functionName,
-    //     method: req.method,
-    //     path: req.url,
-    //     api: `${req.method}@${req.url}`,
-    //     userAgent,
-    //     ip,
-    //     error: res.error,
-    //     msg: res.msg || undefined,
-    //     duration: req.duration,
-    //     nonce: req.nonce || undefined,
-    //     appid: req.appid || undefined,
-    //     apikey: req.apikey || undefined,
-    //     deviceid: req.deviceid || undefined,
-    //     // TODO: awsRequestId
-    //     // reqId: req.awsRequestId,
-    //     date: new Date().toISOString(),
-    // });
+    logger.statistics(config.kinesisCategory.overview, {
+        // TODO: functionName
+        // function: res.functionName,
+        method: req.method,
+        path: req.url,
+        api: `${req.method}@${req.url}`,
+        userAgent,
+        ip,
+        error: res.error,
+        msg: res.msg || undefined,
+        duration: req.duration,
+        nonce: req.nonce || undefined,
+        appid: req.appid || undefined,
+        apikey: req.apikey || undefined,
+        deviceid: req.deviceid || undefined,
+        // TODO: awsRequestId
+        // reqId: req.awsRequestId,
+        date: new Date().toISOString(),
+    });
     console.log('res.error', res.error);
 
     await logger.flush();

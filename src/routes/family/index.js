@@ -1,6 +1,20 @@
+const Joi = require('joi');
+const { errorCode } = require('../../utils/constant');
 const { getFamily } = require('../../controller/family');
-async function check(request, reply) {
-    console.log('进入family模块');
+
+//http header的校验结构
+const headerSchema = Joi.object({
+    'x-ck-nonce': Joi.string().alphanum().length(8),
+    'authorization': Joi.string().pattern(/^Bearer\s[0-9a-f]+$/).required(),
+    'content-type': Joi.string().valid('application/json', 'application/json; charset=utf-8'),
+}).required().unknown(true);
+
+async function check(req, res) {
+    const checkRes = headerSchema.validate(req.headers);
+    if (checkRes.error) {
+        return res.responseError(errorCode.paramsError, checkRes.error.message);
+    }
+    req.headers = checkRes.value;
 }
 module.exports = async (fastify, opts) => {
     // 进入该模块接口前的校验
