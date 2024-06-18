@@ -165,4 +165,72 @@ module.exports = {
         //消息回执
         messageReceipt: 1019,
     },
+
+    //redis缓存的过期时间(秒)
+    redisCacheTtl: {
+        //登录token信息
+        accessToken: 3600,
+        //用户信息
+        user: 3600,
+        //设备信息
+        device: 300,
+        //设备群组信息
+        deviceGroup: 600,
+        //设备出厂信息
+        fd: 7200,
+        //thing列表
+        thingList: 3600,
+        //轻智能小程序添加设备流程中生成的code
+        crc32DeviceCode: 60,
+        //ipc二维码的key
+        ipcQRCodeKey: 600,
+        //ipc二维码的index
+        ipcQRCodeIndex: 610,
+        //二维码添加设备的结果
+        ipcQRCodeDevices: 610,
+        //活动信息
+        activity: 300,
+        //优惠券余量报警, 6小时
+        couponRemainingWarn: 21600,
+        //设备温湿度历史数据上报标志,1小时
+        deviceTempHumReport: 3600,
+        //设备扩展服务结果,15分钟
+        devExtSrv: 900,
+        //云存推送图片gif资源标志位，25秒
+        cvFrameRes: 25,
+        //云存推送图片状态及下载链接的缓存，30分钟
+        cvFrameInfo: 1800,
+        //触发设备功能链接的有效时间，15分钟
+        deviceTriggerUrl: 900,
+        // 绑定 nspro 二维码过期时间
+        addnsproQRCodeKey: 300,
+        // 登录设备二维码过期时间
+        addByLoginThroughQRCodeKey: 300,
+        // 用户的客户端设置，1小时
+        userClientSettings: 3600,
+        // 接口调用限制标志位：5秒
+        invokeFDNum: 5,
+    },
+
+    //appid鉴权白名单，在名单中的appid不会做接口权限校验，全部通过
+    appidWhiteList: new Set([
+        //易微联3.1.4
+        'oeVkj2lYFGnJu5XUtWisfW4utiN4u9Mq', //现网
+        '1xMdjbmOBYctEJfye4EjFLR2M6YpYyyJ', //测试
+
+        //易微联4.0
+        'Uw83EKZFxdif7XFXEsrpduz5YyjP7nTl', //现网
+        '1xMdjbmOBYctEJfye4EjFLR2M6YpYyyJ', //测试
+
+        //StepGMS
+        '2cNUuXZxft97bwaqjjYZeSV3S5dgnDjY', //现网
+        'sXSDuLTMkyQzfhRBu4YC4YkbRGkirYpa', //测试
+
+        //云达开
+        '7LvIOdG5L9eJ6IIDn9zZJqWTWbcEaCdh', //现网
+
+        //v-tac
+        'QFO1mYM8k0pSvE3tijD75hlDDL89cqK6', //现网
+        'PwNwhLOYUObU21lkykPRoDaWchfNxEcO', //测试
+    ]),
 };

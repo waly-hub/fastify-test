@@ -1,4 +1,3 @@
-const storage = require('./storage');
 const fastify = require('fastify')({ logger: true });
 const routes = require('./routes');
 const { checkCROS } = require('./utils/cors');
@@ -8,8 +7,9 @@ const { errorCode } = require('./utils/constant');
 const fpx = require('fast-xml-parser');
 const xmlParser = new fpx.XMLParser();
 const { apiLog } = require('./utils/send2Kinesis');
-const { responseOk, responseError, responseCustome, directResponse } = require('./utils/response');
-
+const injectPlugin = require('./plugin/inject');
+const storagePlugin = require('./plugin/storage');
+const { ValidationError } = require('joi');
 
 const validContentTypes = new Set(['application/json', 'application/json; charset=utf-8']);
 const ignoredPaths = [
@@ -25,14 +25,6 @@ const purchaseNotifyApi = [
     // '/apiv2/purchase/apple/notification',
 ];
 
-async function prestart() {
-    try {
-        // 连接持久层
-        await storage.connectV3({ iotgo: true, redisCache: true });
-    } catch (error) {
-        throw new Error('init failed');
-    }
-}
 
 
 // 请求业务处理之前
@@ -129,37 +121,22 @@ function addRequestHooks(fastify) {
         if (ignoreUrl.includes(req.url) || req.headers['content-type']?.includes('application/json')) {
             return payload;
         } else {
-            res.status(400).send('Content type must be "application/json"');
+            res.responseError(errorCode.paramsError, 'Content type must be "application/json"');
         }
     });
 
 }
 
-function decoratePlugin(fastify) {
-    // 装饰请求对象，声明上下文会话对象
-    fastify.decorateRequest('duration', 0);
-    fastify.decorateRequest('nonce', '');
-    fastify.decorateRequest('appid', '');
-    fastify.decorateRequest('apikey', '');
-    fastify.decorateRequest('deviceid', '');
-
-    // 装饰返回对象
-    fastify.decorateReply('responseOk', responseOk);
-    fastify.decorateReply('responseError', responseError);
-    fastify.decorateReply('responseCustome', responseCustome);
-    fastify.decorateReply('directResponse', directResponse);
-}
-
 const start = async () => {
     try {
         // 初始化数据库
-        fastify.register(prestart);
+        fastify.register(storagePlugin);
 
         // 初始化路由
         fastify.register(routes);
 
         // 注册请求、响应对象装饰器
-        fastify.register(decoratePlugin);
+        fastify.register(injectPlugin);
 
         // 注册应用级钩子
         addApplicationHooks(fastify);
@@ -204,6 +181,9 @@ function errorHandler(error, req, res) {
             // storageService.recordError();
             res.code(200).responseError(errorCode.mongodbError, 'internal error');
         }
+    } else if (error instanceof ValidationError) {
+        // joi校验失败
+        res.responseError(errorCode.paramsError, error.message);
     } else {
         let msg = undefined;
         if (error instanceof Error) {

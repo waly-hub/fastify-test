@@ -82,7 +82,6 @@ async function connectV2(connectOptions = { iotgo: true, redisCache: true }) {
  * @param {Boolean} [connectOptions.thirdPartyMsgQueue] // 选项：连接thirdPartyMsgQueue
  */
 async function connectV3(connectOptions = { iotgo: true, redisCache: true }) {
-    console.log('-----------', connectOptions);
     try {
         const connectList = [];
         const statusList = [];
@@ -123,9 +122,14 @@ async function connectV3(connectOptions = { iotgo: true, redisCache: true }) {
     }
 }
 
+function get() {
+    return instance;
+}
+
 module.exports = {
     connect,
     connectV2,
     connectV3,
     instance,
+    get,
 };

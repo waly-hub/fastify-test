@@ -1,4 +1,4 @@
-const userDao = require('../../dao/mongo/users');
+const userDao = require('../../dao/mongo/iotgo/users');
 const logger = require('../../utils/logger');
 module.exports = async (req, res) => {
     logger.info('fastify-test', 'user fastify-test');

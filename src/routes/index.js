@@ -1,5 +1,7 @@
+const fp = require('fastify-plugin');
 const familyRouter = require('./family');
 const userRouter = require('./user');
+const { ValidationError } = require('joi');
 
 async function registerRouters(fastify) {
     // http OPTIONS请求，一般是跨域调用时会有，直接返回空的成功信息
@@ -11,8 +13,20 @@ async function registerRouters(fastify) {
             res.send(200);
         },
     });
-    fastify.register(familyRouter, { prefix: '/api/v1/family' });
-    fastify.register(userRouter, { prefix: '/api/v1/user' });
+
+    // 注册所有路由的校验器
+    fastify.setValidatorCompiler(({ schema, method, url, httpPart }) => {
+        return data => {
+            const ret = schema.validate(data);
+            if (ret.error) {
+                throw new ValidationError(ret.error);
+            }
+            return ret;
+        };
+    });
+
+    fastify.register(familyRouter, { prefix: '/v2/family' });
+    fastify.register(userRouter, { prefix: '/v2/user' });
 }
 
-module.exports = registerRouters;
+module.exports = fp(registerRouters);

@@ -52,7 +52,6 @@ async function _send2Kinesis(req, res) {
         // reqId: req.awsRequestId,
         date: new Date().toISOString(),
     });
-    console.log('res.error', res.error);
 
     await logger.flush();
 }
